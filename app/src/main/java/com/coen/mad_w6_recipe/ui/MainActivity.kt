@@ -1,52 +1,64 @@
 package com.coen.mad_w6_recipe.ui
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.v4.app.Fragment
+import android.support.design.widget.Snackbar
 import android.support.v4.app.FragmentActivity
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentStatePagerAdapter
-import android.support.v4.view.ViewPager
 import com.coen.mad_w6_recipe.R
+import com.coen.mad_w6_recipe.api.FoodAPI
+import com.coen.mad_w6_recipe.api.FoodAPIService
+import com.coen.mad_w6_recipe.model.APISearchResponse
+import com.coen.mad_w6_recipe.model.Recipe
+import io.reactivex.SingleObserver
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity  : FragmentActivity() {
 
-    /**
-     * The pager widget, which handles animation and allows swiping horizontally to access previous
-     * and next wizard steps.
-     */
-    private lateinit var mPager: ViewPager
+    private lateinit var recipeAdapter: RecipeAdapter
+    private var recipes = ArrayList<Recipe>()
+    private lateinit var foodAPIService: FoodAPIService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Instantiate a ViewPager and a PagerAdapter.
-        mPager = findViewById(R.id.pager)
+        // Create Pager Adatper
+        recipeAdapter = RecipeAdapter(supportFragmentManager, recipes)
+        pager.adapter = recipeAdapter
 
-        // The pager adapter, which provides the pages to the view pager widget.
-        val pagerAdapter = ScreenSlidePagerAdapter(supportFragmentManager)
-        mPager.adapter = pagerAdapter
+        // Start API Service
+        foodAPIService = FoodAPI.start()
+        getRecepices()
     }
 
     override fun onBackPressed() {
-        if (mPager.currentItem == 0) {
-            // If the user is currently looking at the first step, allow the system to handle the
-            // Back button. This calls finish() on this activity and pops the back stack.
-            super.onBackPressed()
-        } else {
-            // Otherwise, select the previous step.
-            mPager.currentItem = mPager.currentItem - 1
-        }
+        if (pager.currentItem == 0) super.onBackPressed()
+        else pager.currentItem = pager.currentItem - 1
     }
+
+
 
     /**
-     * A simple pager adapter that represents 5 ScreenSlidePageFragment objects, in
-     * sequence.
+     * Get the Top Rated Recipes from the Food2Fork Api. If the recipes were retrieved successfully
+     * add the recipes to the viewpager.
      */
-    private inner class ScreenSlidePagerAdapter(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
-        override fun getCount(): Int = 3
-
-        override fun getItem(position: Int): Fragment = RecipeFragment()
+    fun getRecepices() {
+        foodAPIService.get()
+            .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(object : SingleObserver<APISearchResponse> {
+                    override fun onSuccess(response: APISearchResponse) {
+                        response.recipes?.let {
+                            recipes.addAll(it)
+                            recipeAdapter.notifyDataSetChanged()
+                        }
+                    }
+                    override fun onError(e: Throwable) { sbMsg("error: " + e.message) }
+                    override fun onSubscribe(d: Disposable) { sbMsg("OnSubscribe.") }
+                })
     }
+
+    fun sbMsg(msg: String) {  Snackbar.make(pager, msg, Snackbar.LENGTH_LONG).show() }
 }
