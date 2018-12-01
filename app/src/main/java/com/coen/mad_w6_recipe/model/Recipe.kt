@@ -2,17 +2,18 @@ package com.coen.mad_w6_recipe.model
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
 data class Recipe (
-        val publisher: String,
-        val f2fUrl: String,
-        val title: String,
-        val sourceUrl: String,
-        val recipeId: String,
-        val imageUrl: String,
-        val socialRank: String,
-        val publisherUrl: String
+        @SerializedName("publisher") val publisher: String,
+        @SerializedName("f2f_url") val f2fUrl: String,
+        @SerializedName("title") val title: String,
+        @SerializedName("source_url") val sourceUrl: String,
+        @SerializedName("recipe_id") val recipeId: String,
+        @SerializedName("image_url") val imageUrl: String,
+        @SerializedName("social_rank") val socialRank: String,
+        @SerializedName("publisher_url") val publisherUrl: String
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
             parcel.readString(),
